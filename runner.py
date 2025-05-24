@@ -6,11 +6,10 @@ import requests
 import threading
 import shutil
 import os
+import json
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Allure sonuçlarını temizle
-if os.path.exists("allure-results"):
-    shutil.rmtree("allure-results")
 
 def start_appium(port):
     """Belirtilen portta Appium sunucusunu başlatır."""
@@ -37,29 +36,24 @@ def determine_platforms_from_tags(tags):
     
     tag_value = tags.replace('--tags=', '')
     platforms = []
-    
-    if 'web_safari' in tag_value:
-        platforms.append('safari')
-    if 'android2' in tag_value:  # İki Android cihazını çalıştırmak için yeni tag
-        platforms.extend(['android2'])
-    if 'android1' in tag_value:  # Tek Android cihazı için
-        platforms.append('android1')  # Varsayılan olarak android1
-    if 'ios' in tag_value:
-        platforms.append('ios')
 
+    with open("deviceList.json", "r") as f:
+        device_list = json.load(f)
+    
+    for name in device_list:
+        if name in tag_value:
+            platforms.append(name)
+    
+    if 'allDevice' in tag_value:
+        platforms.append('allDevice')
+    
     return platforms
 
 def run_behave(tags, platform):
-    result_dir = f"allure-results-{platform}"
-    # Clean the result directory before running behave
-    if os.path.exists(result_dir):
-        shutil.rmtree(result_dir)
     behave_command = [
         "behave",
         tags,
-        f"--define=platform={platform}",
-        "--format=allure_behave.formatter:AllureFormatter",
-        f"--out={result_dir}"
+        f"--define=platform={platform}"
     ]
     print(f"🔎 {platform.upper()} için Behave Komutu: {' '.join(behave_command)}")
     try:
@@ -70,9 +64,13 @@ def run_behave(tags, platform):
 if __name__ == '__main__':
     platform_tags = {}
 
+    # Cihaz listesini yükle
+    with open("deviceList.json", "r") as f:
+        device_list = json.load(f)
+
     print("Birden fazla tag ve cihaz girebilirsiniz. Örnek: android1 için @login,@search gibi virgül ile ayırarak yazın.")
     while True:
-        user_input = input("Platform ve tag(ler)ini girin (örnek: android1=@login,@search), bitirmek için boş bırakın: ").strip()
+        user_input = input("Platform ve tag(ler)ini girin (örnek: ekran1=@login,@search), bitirmek için boş bırakın: ").strip()
         if not user_input:
             break
         if "=" in user_input:
@@ -85,23 +83,24 @@ if __name__ == '__main__':
 
     appium_processes = []
     for platform in platform_tags:
-        if platform == 'android1':
-            appium_android1 = start_appium(4723)
-            if not appium_android1:
-                sys.exit("❌ Android1 için Appium başlatılamadı!")
-            appium_processes.append(appium_android1)
-        elif platform == 'android2':
-            appium_android2 = start_appium(4724)
-            if not appium_android2:
-                sys.exit("❌ Android2 için Appium başlatılamadı!")
-            appium_processes.append(appium_android2)
-        elif platform == 'ios':
-            appium_ios = start_appium(4725)
-            if not appium_ios:
-                sys.exit("❌ iOS için Appium başlatılamadı!")
-            appium_processes.append(appium_ios)
-        elif platform == 'safari':
-            print("Safari testi seçildi, driver environment.py'da başlatılacak.")
+        if platform == 'allDevice':
+            for i, (device_name, device_ip) in enumerate(device_list.items()):
+                port = 4730 + i
+                if ":" in device_ip and device_ip.replace(".", "").replace(":", "").isdigit():
+                    subprocess.run(["adb", "connect", device_ip])
+                appium_proc = start_appium(port)
+                if not appium_proc:
+                    sys.exit(f"❌ {device_name} için Appium başlatılamadı!")
+                appium_processes.append(appium_proc)
+        elif platform in device_list:
+            device_id = device_list[platform]
+            if ":" in device_id and device_id.replace(".", "").replace(":", "").isdigit():
+                subprocess.run(["adb", "connect", device_id])
+            port = 4723
+            appium_proc = start_appium(port)
+            if not appium_proc:
+                sys.exit(f"❌ {platform} için Appium başlatılamadı!")
+            appium_processes.append(appium_proc)
 
     behave_threads = []
     for platform, tags in platform_tags.items():
@@ -116,14 +115,3 @@ if __name__ == '__main__':
     for process in appium_processes:
         process.terminate()
         print("🚪 Appium sunucusu kapatıldı!")
-
-    print("\n📊 Tüm platformlar için Allure raporları oluşturuluyor.")
-    for platform in platform_tags:
-        result_dir = f"allure-results-{platform}"
-        report_dir = f"allure-report-{platform}"
-        try:
-            subprocess.run(f"allure generate {result_dir} -o {report_dir} --clean", shell=True, check=True)
-            subprocess.Popen(["allure", "open", report_dir])
-            print(f"✅ {platform} için rapor oluşturuldu ve açıldı: {report_dir}")
-        except subprocess.CalledProcessError:
-            print(f"❌ {platform} için rapor oluşturulamadı.")
