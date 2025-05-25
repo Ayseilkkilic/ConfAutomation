@@ -32,4 +32,9 @@ Feature: WIFE Android Device Test
       | By Language         |
       | View All            |
 
+  @mov3 @allScenarios
+  Scenario: Verify "New Releases" section is displayed
+    Given Chrome tarayıcısı açık
+    When Planet Thy Adresine gidilir
+    Then User should see "TÜMÜ" section
   

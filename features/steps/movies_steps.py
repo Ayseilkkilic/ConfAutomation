@@ -14,3 +14,8 @@ def step_impl(context):
 def steps_open_planet_thy(context):
     context.moviesPage = MoviesPage(context.driver)
     context.moviesPage.open_planet_web()
+
+@then('User should see "{text}" section')
+def step_user_should_see(context,text):
+    context.moviesPage = MoviesPage(context.driver)
+    context.moviesPage.user_should_see(text)

@@ -81,6 +81,4 @@ allDevice=@smoke
 - ADB (Android Debug Bridge)
 - Android cihazlar veya emülatörler
 
-## 👨‍💻 Katkıda Bulunma
-
 --
