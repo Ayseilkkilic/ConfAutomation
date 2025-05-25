@@ -68,7 +68,28 @@ if __name__ == '__main__':
     with open("deviceList.json", "r") as f:
         device_list = json.load(f)
 
-    print("Birden fazla tag ve cihaz girebilirsiniz. Örnek: android1 için @login,@search gibi virgül ile ayırarak yazın.")
+    # Sadece bağlı cihazları filtrele (UDID veya IP:PORT formatı)
+    adb_output = subprocess.check_output(["adb", "devices"]).decode()
+    connected_devices = [line.split()[0] for line in adb_output.splitlines() if '\tdevice' in line]
+
+    filtered_device_list = {}
+    for name, udid in device_list.items():
+        if udid in connected_devices:
+            filtered_device_list[name] = udid
+        elif ":" in udid and udid.replace(".", "").replace(":", "").isdigit():
+            try:
+                subprocess.run(["adb", "connect", udid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+                # Check again if it's now connected
+                adb_output = subprocess.check_output(["adb", "devices"]).decode()
+                updated_connected = [line.split()[0] for line in adb_output.splitlines() if '\tdevice' in line]
+                if udid in updated_connected:
+                    filtered_device_list[name] = udid
+                else:
+                    print(f"⚠️ {name} bağlanamadı, test kapsamı dışına alınıyor.")
+            except subprocess.TimeoutExpired:
+                print(f"⏱️ {name} bağlantı zaman aşımına uğradı (adb connect). Test kapsamı dışına alındı.")
+
+    print("Birden fazla tag ve cihaz girebilirsiniz. Örnek: Ekran1 için @login,@search gibi virgül ile ayırarak yazın.")
     while True:
         user_input = input("Platform ve tag(ler)ini girin (örnek: ekran1=@login,@search), bitirmek için boş bırakın: ").strip()
         if not user_input:
@@ -82,32 +103,51 @@ if __name__ == '__main__':
         sys.exit(1)
 
     appium_processes = []
+    device_ports = {}
     for platform in platform_tags:
         if platform == 'allDevice':
-            for i, (device_name, device_ip) in enumerate(device_list.items()):
+            for i, (device_name, device_ip) in enumerate(filtered_device_list.items()):
                 port = 4730 + i
-                if ":" in device_ip and device_ip.replace(".", "").replace(":", "").isdigit():
-                    subprocess.run(["adb", "connect", device_ip])
+                if device_ip not in connected_devices and ":" in device_ip and device_ip.replace(".", "").replace(":", "").isdigit():
+                    try:
+                        subprocess.run(["adb", "connect", device_ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+                    except subprocess.TimeoutExpired:
+                        print(f"⏱️ {device_name} bağlantı zaman aşımına uğradı (adb connect).")
                 appium_proc = start_appium(port)
                 if not appium_proc:
                     sys.exit(f"❌ {device_name} için Appium başlatılamadı!")
                 appium_processes.append(appium_proc)
-        elif platform in device_list:
-            device_id = device_list[platform]
-            if ":" in device_id and device_id.replace(".", "").replace(":", "").isdigit():
-                subprocess.run(["adb", "connect", device_id])
+                device_ports[device_name] = port
+        elif platform in filtered_device_list:
+            device_id = filtered_device_list[platform]
+            if device_id not in connected_devices and ":" in device_id and device_id.replace(".", "").replace(":", "").isdigit():
+                try:
+                    subprocess.run(["adb", "connect", device_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+                except subprocess.TimeoutExpired:
+                    print(f"⏱️ {platform} bağlantı zaman aşımına uğradı (adb connect).")
             port = 4723
             appium_proc = start_appium(port)
             if not appium_proc:
                 sys.exit(f"❌ {platform} için Appium başlatılamadı!")
             appium_processes.append(appium_proc)
+            device_ports[platform] = port
+
+    with open("device_ports.json", "w") as pf:
+        json.dump(device_ports, pf)
 
     behave_threads = []
     for platform, tags in platform_tags.items():
-        for tag in tags:
-            t = threading.Thread(target=run_behave, args=(f"--tags={tag}", platform))
-            behave_threads.append(t)
-            t.start()
+        if platform == "allDevice":
+            for device_name in filtered_device_list:
+                for tag in tags:
+                    t = threading.Thread(target=run_behave, args=(f"--tags={tag}", device_name))
+                    behave_threads.append(t)
+                    t.start()
+        else:
+            for tag in tags:
+                t = threading.Thread(target=run_behave, args=(f"--tags={tag}", platform))
+                behave_threads.append(t)
+                t.start()
 
     for t in behave_threads:
         t.join()

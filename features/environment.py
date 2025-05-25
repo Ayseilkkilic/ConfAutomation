@@ -10,19 +10,11 @@ def before_all(context):
     context.drivers = {}  # Birden fazla driver'ı desteklemek için
     context.driver = None  # Varsayılan olarak driver None
 
-    if 'safari' in platform:
-        try:
-            safari_driver = selenium_webdriver.Safari()
-            context.drivers['safari'] = safari_driver
-            context.driver = safari_driver
-            print("✅ Safari WebDriver başlatıldı.")
-        except Exception as e:
-            print(f"❌ Safari WebDriver başlatılamadı: {e}")
-            raise
-
     # Eğer cihaz listesi içindeki bir platformsa, ona göre başlat
     with open("deviceList.json", "r") as f:
         device_list = json.load(f)
+    with open("device_ports.json", "r") as pf:
+        port_map = json.load(pf)
 
     for name, udid in device_list.items():
         if platform == name or platform == 'allDevice':
@@ -36,7 +28,7 @@ def before_all(context):
             }
             options = UiAutomator2Options()
             options.load_capabilities(capabilities)
-            port = 4723
+            port = port_map.get(name, 4723)
             appium_server_url = f'http://localhost:{port}'
             try:
                 android_driver = appium_webdriver.Remote(command_executor=appium_server_url, options=options)

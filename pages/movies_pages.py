@@ -6,7 +6,7 @@ from common.base import Base
 
 
 
-class Android1_MoviesPage(Base):
+class MoviesPage(Base):
     def __init__(self, driver):
         self.driver = driver
         self.locators = CommonLocators()
