@@ -5,7 +5,7 @@ from locators.common_locators import CommonLocators
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support import expected_conditions as EC
 
-@when('User click on "{text}" button')
+@given('User click on "{text}" button')
 def step_click_on_button_with_text(context, text):
     context.base = Base(context.driver)
     context.commonlocators = CommonLocators()

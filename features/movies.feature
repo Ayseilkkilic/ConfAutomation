@@ -3,10 +3,8 @@ Feature: WIFE Android Device Test
 
   @mov1 @allScenarios
   Scenario: Chrome'u açıp PlanetThy adresine git
-    Given Chrome tarayıcısı açık
-    When Planet Thy Adresine gidilir
-    When User click on "Movies" button
-    Then "New Releases" section should be displayed
+    Given User click on "English" button
+    Given User click on "Movies" button
 
   @mov2 @allScenarios
   Scenario Outline: Verify menu button texts are visible on the screen

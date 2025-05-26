@@ -22,9 +22,10 @@ def before_all(context):
                 'platformName': 'Android',
                 'automationName': 'UiAutomator2',
                 'udid': udid,
-                'appPackage': 'com.android.chrome',
-                'appActivity': 'com.google.android.apps.chrome.Main',
-                'noReset': True
+                'appPackage': 'aero.tci.entertainment',
+                'appActivity': 'aero.tci.entertainment.activity.SplashActivity',
+                'noReset': False,
+                'fullReset': False
             }
             options = UiAutomator2Options()
             options.load_capabilities(capabilities)
