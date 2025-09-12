@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run ParallelRunner",
+      "request": "launch",
+      "mainClass": "com.confautomation.runner.ParallelRunner",
+      "cwd": "${workspaceFolder}/java"
+    }
+  ]
+}
+

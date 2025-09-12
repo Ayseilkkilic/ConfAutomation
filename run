@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Helper to run the Java ParallelRunner similar to python runner.py
+cd "$(dirname "$0")/java"
+
+if ! mvn -q -DskipTests -Dstyle.color=always -Dbatch-mode -Dspotbugs.skip=true -Dcheckstyle.skip=true package; then
+  echo "Build failed. Please check Maven/JDK installation." >&2
+  exit 1
+fi
+
+mvn -q -Dstyle.color=always -Dbatch-mode exec:java
+
