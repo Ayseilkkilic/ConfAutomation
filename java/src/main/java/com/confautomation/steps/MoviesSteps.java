@@ -1,11 +1,8 @@
 package com.confautomation.steps;
 
-import com.confautomation.pages.MoviesPage;
 import com.confautomation.support.DriverManager;
 import io.appium.java_client.appmanagement.ApplicationState;
 import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
 import org.junit.jupiter.api.Assertions;
 
 public class MoviesSteps {
@@ -42,17 +39,5 @@ public class MoviesSteps {
                 finalState == ApplicationState.RUNNING_IN_FOREGROUND || finalState == ApplicationState.RUNNING_IN_BACKGROUND,
                 "App is not running. State: " + finalState
         );
-    }
-
-    @When("Planet Thy Adresine gidilir")
-    public void openPlanetThy() {
-        MoviesPage page = new MoviesPage(DriverManager.getDriver());
-        page.openPlanetWeb();
-    }
-
-    @Then("User should see \"{string}\" section")
-    public void userShouldSee(String text) {
-        MoviesPage page = new MoviesPage(DriverManager.getDriver());
-        page.userShouldSee(text);
     }
 }

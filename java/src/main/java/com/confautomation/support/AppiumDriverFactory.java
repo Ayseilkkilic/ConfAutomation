@@ -38,9 +38,9 @@ public class AppiumDriverFactory {
                 .amend("appPackage", "aero.tci.entertainment")
                 .amend("appActivity", "aero.tci.entertainment.activity.SplashActivity")
                 // Fresh launch every run
-                .amend("noReset", false)
+                .amend("noReset", true)
                 .amend("fullReset", false)
-                .amend("dontStopAppOnReset", false)
+                .amend("dontStopAppOnReset", true)
                 .amend("autoGrantPermissions", true)
                 .amend("newCommandTimeout", 180)
                 .amend("appWaitPackage", "aero.tci.entertainment")
