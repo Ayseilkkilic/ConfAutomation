@@ -1,7 +1,0 @@
-com/confautomation/common/Base.class
-com/confautomation/runner/CucumberTest.class
-com/confautomation/steps/MoviesSteps.class
-com/confautomation/locators/CommonLocators.class
-com/confautomation/pages/MoviesPage.class
-com/confautomation/steps/CommonSteps.class
-com/confautomation/hooks/TestHooks.class
