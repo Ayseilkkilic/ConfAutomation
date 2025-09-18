@@ -1,4 +1,9 @@
 {
-  "Seat2B" : 4730,
-  "Seat1B" : 4731
+  "Seat2A" : 4730,
+  "Seat2B" : 4731,
+  "Seat2C" : 4732,
+  "Seat3A" : 4733,
+  "Seat3B" : 4734,
+  "Seat1A" : 4735,
+  "Seat1B" : 4736
 }

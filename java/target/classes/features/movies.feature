@@ -2,21 +2,32 @@ Feature: Basit Uygulama Testi
   Uygulama açılır ve ana ekranda kısa bir bekleme yapılır.
 
  
-  @smoke @all
-  Scenario: English butonuna tıklanır
+  @movies @all
+  Scenario: Uygulama açılması, Dil seçimi ve Moies modülüne tıklanılması.
     Given Uygulama açıldı
-    Then 2 saniye beklenir
-    And User click on "English" button
-    Then 2 saniye beklenir
-
-  @smoke1 @all
-  Scenario Outline: Dil seçimi sonrası başlık görünürlüğü
-    Given Uygulama açıldı
-    Then 2 saniye beklenir
     And User click on "<language>" button
-    Then 2 saniye beklenir
     Then "<expectedText>" should be visible on the screen
+    And User click on "<moviesModul>" button
 
-    Examples:
-      | language | expectedText |
-      | English  | Movies       |
+      Examples:
+      | language | expectedText | moviesModul |
+      | English  | Movies       | Movies      |
+  
+    
+   
+    
+
+  @movies @all
+  Scenario Outline: Uygulama açılması, Dil seçimi ve Moies modülüne tıklanılması.
+    Given Uygulama açıldı
+    And User click on "<language>" button
+    Then "<expectedText>" should be visible on the screen
+    And User click on "<moviesModul>" button
+          Examples:
+      | language | expectedText | moviesModul |
+      | English  | Movies       | Movies      |
+
+
+
+
+  

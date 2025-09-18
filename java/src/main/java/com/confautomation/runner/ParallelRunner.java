@@ -6,9 +6,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.cucumber.core.cli.Main;
 
 import java.io.BufferedReader;
+import java.awt.Desktop;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -155,6 +158,8 @@ public class ParallelRunner {
 
         // stop appium
         serverManager.shutdownAll();
+
+        generateAndOpenAllureReport();
     }
 
     private static void runCucumberFor(String tagExpr, String platformName) {
@@ -165,6 +170,7 @@ public class ParallelRunner {
         List<String> argv = new ArrayList<>();
         argv.add("--plugin"); argv.add("pretty");
         argv.add("--plugin"); argv.add("summary");
+        argv.add("--plugin"); argv.add("io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm");
         argv.add("--glue"); argv.add("com.confautomation.steps");
         argv.add("--glue"); argv.add("com.confautomation.hooks");
         argv.add("--tags"); argv.add(tagExpr);
@@ -258,5 +264,78 @@ public class ParallelRunner {
                 }
             }
         } catch (IOException ignored) {}
+    }
+
+    private static void generateAndOpenAllureReport() {
+        Path moduleRoot = Path.of("").toAbsolutePath();
+        Path resultsDir = locateAllureResults(moduleRoot);
+        if (resultsDir == null) {
+            return;
+        }
+
+        Path reportDir = moduleRoot.resolve("target").resolve("allure-report");
+        if (!runAllureCommand(List.of("allure", "generate", resultsDir.toString(), "-o", reportDir.toString(), "--clean"), true)) {
+            System.out.println("⚠️ Allure raporu oluşturulamadı. Lütfen `allure` komutunun kurulu olduğundan emin olun.");
+            return;
+        }
+
+        boolean opened = runAllureCommand(List.of("allure", "open", reportDir.toString()), false);
+        if (opened) {
+            System.out.println("🌐 Allure raporu tarayıcıda açılıyor...");
+            return;
+        }
+
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(reportDir.resolve("index.html").toUri());
+                System.out.println("🌐 Allure raporu varsayılan tarayıcıda açıldı.");
+            } else {
+                System.out.println("ℹ️ Rapor: " + reportDir.resolve("index.html"));
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Allure raporu açılamadı: " + e.getMessage());
+            System.out.println("ℹ️ Rapor: " + reportDir.resolve("index.html"));
+        }
+    }
+
+    private static boolean runAllureCommand(List<String> command, boolean waitForCompletion) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(Path.of("").toAbsolutePath().toFile());
+            pb.inheritIO();
+            Process process = pb.start();
+            if (waitForCompletion) {
+                int exitCode = process.waitFor();
+                return exitCode == 0;
+            }
+            return true;
+        } catch (IOException e) {
+            System.out.println("⚠️ Allure komutu çalıştırılamadı: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("⚠️ Allure komutu beklenirken kesintiye uğradı.");
+        }
+        return false;
+    }
+
+    private static Path locateAllureResults(Path moduleRoot) {
+        List<Path> candidates = List.of(
+                moduleRoot.resolve("target").resolve("allure-results"),
+                moduleRoot.resolve("allure-results")
+        );
+
+        for (Path candidate : candidates) {
+            if (!Files.isDirectory(candidate)) continue;
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(candidate)) {
+                if (stream.iterator().hasNext()) {
+                    return candidate;
+                }
+            } catch (IOException e) {
+                System.out.println("⚠️ Allure sonuçları okunamadı (" + candidate + "): " + e.getMessage());
+            }
+        }
+
+        System.out.println("ℹ️ Allure sonuç klasörü bulunamadı veya boş.");
+        return null;
     }
 }
