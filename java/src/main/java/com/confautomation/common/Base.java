@@ -3,6 +3,8 @@ package com.confautomation.common;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.Rectangle;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -86,37 +88,12 @@ public class Base {
         driver.findElement(AppiumBy.androidUIAutomator("new UiScrollable(new UiSelector().scrollable(true).instance(0)).scrollIntoView(new UiSelector().text(\"" + text + "\").instance(0))"));
     }
 
-    public void scrollHorizontalUntilVisibleText(String text) {
-        driver.findElement(AppiumBy.androidUIAutomator(String.format("new UiScrollable(new UiSelector().scrollable(true).instance(0)).setAsHorizontalList().scrollIntoView(new UiSelector().text(\"%s\").instance(0))", text)));
-    }
-
     public void scrollDown() {
         var size = driver.manage().window().getSize();
         int x = (int) (size.width * 0.7);
         int yStart = (int) (size.height * 0.65);
         int yEnd = (int) (size.height * 0.32);
         swipe(x, yStart, x, yEnd, 800);
-    }
-
-    public void scrollDownEnd(int iteration) {
-        for (int i = 0; i < iteration; i++) {
-            scrollDown();
-        }
-    }
-
-    public void scrollToEndOfPage() {
-        String initial = driver.getPageSource();
-        int startX = driver.manage().window().getSize().width / 3;
-        int startY = (int) (driver.manage().window().getSize().height * 0.75);
-        int endY = (int) (driver.manage().window().getSize().height * 0.25);
-        while (true) {
-            swipe(startX, startY, startX, endY, 300);
-            String updated = driver.getPageSource();
-            if (updated.equals(initial)) {
-                break;
-            }
-            initial = updated;
-        }
     }
 
     private void swipe(int startX, int startY, int endX, int endY, int durationMs) {
@@ -127,6 +104,36 @@ public class Base {
         swipe.addAction(finger.createPointerMove(Duration.ofMillis(durationMs), PointerInput.Origin.viewport(), endX, endY));
         swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
         driver.perform(Arrays.asList(swipe));
+    }
+
+    public void tap(int x, int y) {
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence tap = new Sequence(finger, 1);
+        tap.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, y));
+        tap.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        tap.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(List.of(tap));
+    }
+
+    public void tapCenter(WebElement element) {
+        Rectangle rect = element.getRect();
+        int cx = rect.getX() + rect.getWidth() / 2;
+        int cy = rect.getY() + rect.getHeight() / 2;
+        tap(cx, cy);
+    }
+
+    public WebElement findElementWithScroll(By by, String selector, int maxScrolls) {
+        By finalBy = locator(by, selector);
+        for (int i = 0; i <= Math.max(0, maxScrolls); i++) {
+            List<WebElement> candidates = driver.findElements(finalBy);
+            for (WebElement candidate : candidates) {
+                if (candidate.isDisplayed()) {
+                    return candidate;
+                }
+            }
+            scrollDown();
+        }
+        throw new NoSuchElementException("Element not found after scrolling: " + selector);
     }
 
     private By locator(By by, String selector) {
@@ -144,4 +151,3 @@ public class Base {
         return By.xpath(selector);
     }
 }
-

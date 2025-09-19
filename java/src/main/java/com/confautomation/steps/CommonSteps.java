@@ -24,6 +24,7 @@ public class CommonSteps {
     @Then("User click on {string} button")
     public void clickOnButtonWithText(String text) {
         var driver = DriverManager.getDriver();
+        var base = new Base(driver);
         String exact = CommonLocators.TEXT_XPATH.replace("{}", text);
         String normalized = "//*[normalize-space(@text)='" + text + "' or normalize-space(.)='" + text + "']";
         String contains = "//*[contains(@text,'" + text + "') or contains(normalize-space(.),'" + text + "')]";
@@ -55,6 +56,24 @@ public class CommonSteps {
                 return null;
             });
         } catch (Exception ignored) {}
+
+        if (target == null) {
+            try { base.scrollUntilVisibleText(text); } catch (Exception ignored) {}
+            try {
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(3));
+                target = wait.until(d -> {
+                    for (By locator : candidates) {
+                        var matches = d.findElements(locator);
+                        if (matches.isEmpty()) continue;
+                        for (WebElement match : matches) {
+                            if (match.isDisplayed()) return match;
+                        }
+                        return matches.get(0);
+                    }
+                    return null;
+                });
+            } catch (Exception ignored) {}
+        }
 
         if (target != null) {
             try {
@@ -121,5 +140,47 @@ public class CommonSteps {
     @Then("{int} saniye beklenir")
     public void waitSeconds(int seconds) throws InterruptedException {
         Thread.sleep(seconds * 1000L);
+    }
+
+    @Then("User click on home button")
+    public void clickOnHomeButton() {
+        var driver = DriverManager.getDriver();
+        var base = new Base(driver);
+        base.clickElement(AppiumBy.id(CommonLocators.HOME_BUTTON_ID), CommonLocators.HOME_BUTTON_ID);
+    }
+
+    @Then("User click on AnatomyPoster button")
+    public void clickOnAnatomyPosterButton() {
+        var driver = DriverManager.getDriver();
+        var base = new Base(driver);
+        base.clickElement(AppiumBy.xpath(CommonLocators.ANATOMY_POSTER_XPATH), CommonLocators.ANATOMY_POSTER_XPATH);
+    }
+
+    @Then("User scroll to TheGoodFather poster")
+    public void scrollToTheGoodFatherPoster() {
+        var driver = DriverManager.getDriver();
+        var base = new Base(driver);
+        try {
+            base.findElementWithScroll(
+                    AppiumBy.xpath(CommonLocators.GOOD_FATHER_POSTER_XPATH),
+                    CommonLocators.GOOD_FATHER_POSTER_XPATH,
+                    8
+            );
+        } catch (Exception e) {
+            Assertions.fail("Could not scroll to TheGoodFather poster");
+        }
+    }
+
+    @Then("User click on TheGoodFather poster")
+    public void clickOnTheGoodFatherPoster() {
+        var driver = DriverManager.getDriver();
+        var base = new Base(driver);
+        base.clickElement(AppiumBy.xpath(CommonLocators.GOOD_FATHER_POSTER_XPATH), CommonLocators.GOOD_FATHER_POSTER_XPATH);
+    }
+     @Then("User click on Watch Button poster")
+    public void clickOnWatchButton() {
+        var driver = DriverManager.getDriver();
+        var base = new Base(driver);
+        base.clickElement(AppiumBy.id(CommonLocators.WATCH_BUTTON_ID), CommonLocators.WATCH_BUTTON_ID);
     }
 }

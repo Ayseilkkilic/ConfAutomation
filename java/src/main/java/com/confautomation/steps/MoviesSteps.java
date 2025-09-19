@@ -16,7 +16,7 @@ public class MoviesSteps {
 
         // Helper: wait until foreground up to 15s
         java.util.function.Supplier<Boolean> waitForeground = () -> {
-            long end = System.currentTimeMillis() + 15_000;
+            long end = System.currentTimeMillis();
             ApplicationState s = driver.queryAppState(appId);
             while (System.currentTimeMillis() < end && s != ApplicationState.RUNNING_IN_FOREGROUND) {
                 try { Thread.sleep(500); } catch (InterruptedException ignored) {}
