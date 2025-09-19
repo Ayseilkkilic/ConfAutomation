@@ -10,6 +10,7 @@ import io.cucumber.java.en.When;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Rectangle;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -18,6 +19,7 @@ import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 public class CommonSteps {
 
@@ -37,41 +39,36 @@ public class CommonSteps {
                 AppiumBy.xpath(withinWheel)
         );
 
-        WebElement target = null;
-        try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
-            target = wait.until(d -> {
-                for (By locator : candidates) {
-                    var matches = d.findElements(locator);
-                    if (matches.isEmpty()) {
-                        continue;
-                    }
-                    for (WebElement match : matches) {
-                        if (match.isDisplayed()) {
-                            return match;
-                        }
-                    }
-                    return matches.get(0);
+        Function<WebDriver, WebElement> resolveTarget = context -> {
+            for (By locator : candidates) {
+                var matches = context.findElements(locator);
+                if (matches.isEmpty()) {
+                    continue;
                 }
-                return null;
-            });
-        } catch (Exception ignored) {}
+                for (WebElement match : matches) {
+                    if (match.isDisplayed()) {
+                        return match;
+                    }
+                }
+            }
+            return null;
+        };
+
+        WebElement target = resolveTarget.apply(driver);
+        if (target == null) {
+            try {
+                WebDriverWait initialWait = new WebDriverWait(driver, Duration.ofSeconds(5));
+                initialWait.pollingEvery(Duration.ofMillis(200));
+                target = initialWait.until(resolveTarget::apply);
+            } catch (Exception ignored) {}
+        }
 
         if (target == null) {
             try { base.scrollUntilVisibleText(text); } catch (Exception ignored) {}
             try {
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(3));
-                target = wait.until(d -> {
-                    for (By locator : candidates) {
-                        var matches = d.findElements(locator);
-                        if (matches.isEmpty()) continue;
-                        for (WebElement match : matches) {
-                            if (match.isDisplayed()) return match;
-                        }
-                        return matches.get(0);
-                    }
-                    return null;
-                });
+                WebDriverWait postScrollWait = new WebDriverWait(driver, Duration.ofSeconds(3));
+                postScrollWait.pollingEvery(Duration.ofMillis(200));
+                target = postScrollWait.until(resolveTarget::apply);
             } catch (Exception ignored) {}
         }
 

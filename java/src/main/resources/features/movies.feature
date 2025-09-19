@@ -14,11 +14,6 @@ Feature: Basit Uygulama Testi
     Then User scroll to TheGoodFather poster
     Then User click on TheGoodFather poster
     Then User click on Watch Button poster
-    
-
-   
-
-  
 
 
       Examples:
@@ -29,7 +24,7 @@ Feature: Basit Uygulama Testi
    
     
 
-  @movies 
+ 
   Scenario Outline: Uygulama açılması, Dil seçimi ve Moies modülüne tıklanılması.
     And User click on home button
     And User click on "<language>" button

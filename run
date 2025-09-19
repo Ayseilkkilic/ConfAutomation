@@ -4,10 +4,13 @@ set -euo pipefail
 # Helper to run the Java ParallelRunner similar to python runner.py
 cd "$(dirname "$0")/java"
 
+# Ensure Allure shows only the latest execution
+rm -rf allure-results target/allure-results target/allure-report
+mkdir -p allure-results
+
 if ! mvn -q -DskipTests -Dstyle.color=always -Dbatch-mode -Dspotbugs.skip=true -Dcheckstyle.skip=true package; then
   echo "Build failed. Please check Maven/JDK installation." >&2
   exit 1
 fi
 
 mvn -q -Dstyle.color=always -Dbatch-mode exec:java
-
